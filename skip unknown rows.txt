@@ -54,3 +54,8 @@ cnxn = pyodbc.connect('DRIVER={Oracle in XE};Direct=True;Host='+Hostwa+';
 df = pd.read_sql("select * from EMP",cnxn)
 
 --------------------------------------------------------
+
+4) Selecting till first empty row encountered
+
+first_row_with_all_NaN = df[df.isnull().all(axis=1) == True].index.tolist()[0]
+df.loc[0:first_row_with_all_NaN-1]
