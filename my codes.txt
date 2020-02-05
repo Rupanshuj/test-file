@@ -1,0 +1,91 @@
+1.)
+
+Skip unknown rows and find header.. here starts with ID
+
+import os
+def skip_to(fle, line,**kwargs):
+    if os.stat(fle).st_size == 0:
+        raise ValueError("File is empty")
+    with open(fle) as f:
+        pos = 0
+        cur_line = f.readline()
+        while not cur_line.startswith(line):
+            pos = f.tell()
+            cur_line = f.readline()
+        f.seek(pos)
+        return pd.read_csv(f, **kwargs)
+
+df = skip_to("C:/DataScience/DataCamp/22. SQL + PY + TAB/Absenteeism_data.csv","ID")
+
+
+----------------------------------------------------------
+
+2) Writing multiple dataframes to single sheet
+
+def multiple_dfs(df_list, sheets, file_name, spaces):
+    writer = pd.ExcelWriter(file_name,engine='xlsxwriter')   
+    row = 0
+    for dataframe in df_list:
+        dataframe.to_excel(writer,sheet_name=sheets,startrow=row , startcol=0)   
+        row = row + len(dataframe.index) + spaces + 1
+    writer.save()
+
+# list of dataframes
+dfs = [df1,df2,df3]
+
+# run function
+multiple_dfs(dfs, 'Validation', 'test1.xlsx', 1)
+
+---------------------------------------------------------
+
+3) Database connection
+
+import pyodbc
+from myconfig import *
+import pandas as pd
+
+Hostwa='localhost'
+ServiceNamewa='xe'
+UIDI='user01'
+cnxn = pyodbc.connect('DRIVER={Oracle in XE};Direct=True;Host='+Hostwa+';
+                      Service Name='+ServiceNamewa+';UID='+UIDI+';PWD='+Password+'')
+
+
+df = pd.read_sql("select * from EMP",cnxn)
+
+--------------------------------------------------------
+
+4) Selecting till first empty row encountered
+
+first_row_with_all_NaN = df[df.isnull().all(axis=1) == True].index.tolist()[0]
+df.loc[0:first_row_with_all_NaN-1]
+
+--------------------------------------------------------
+
+df1 = pd.read_csv('w1.csv')
+df2 = pd.read_csv('w2.csv')
+df1 = df1[['CountryName']]
+df2 = df2[['CountryName']]
+df3=pd.concat([df1,df2[df2.isin(df1)]] , ignore_index=True, axis = 1).fillna("-")
+df4=pd.concat([df2,df1[df1.isin(df2)]] , ignore_index=True, axis = 1).fillna("-")
+dff = pd.concat([df3,df4], axis =1 )
+dff.columns = ['a','b','c','d']
+dff['Result'] = dff['a'] == dff['c']
+df = dff[['a','c','Result']]
+
+---------------------------------------------------
+
+updated
+
+df1 = pd.read_csv('w1.csv')
+df2 = pd.read_csv('w2.csv')
+df1 = df1[['CountryName']]
+df2 = df2[['CountryName']]
+df1 = df1.groupby(['CountryName'])
+df2 = df2.groupby(['CountryName'])
+df1 = df1.apply(lambda x: x.reset_index(drop=True))
+df2 = df2.apply(lambda x: x.reset_index(drop=True))
+df3=pd.concat([df1,df2] , ignore_index=True, axis = 1).fillna("-")
+df3 = df3[[0,1]].reset_index(drop=True)
+df3 = df3.rename(columns = {0:'Name1', 1:'Name2'})
+df3
